@@ -53,20 +53,20 @@ environment variable is set either in the terminal context or in the `.env` file
 
 ### Source Authentication and Authorization
 
-This tap requires a Cursor Admin API Bearer token for authentication. You can obtain this token from your Cursor account settings under the Admin API section.
+This tap requires a Cursor Admin API key for authentication. You can obtain this API key from your Cursor account settings under the Admin API section.
 
-The tap uses Bearer token authentication with the `Authorization: Bearer <token>` header format.
+The tap uses Basic Authentication with the API key as the username and an empty password.
 
 ### Required Environment Variables
 
-- `CURSOR_AUTH_TOKEN`: Your Cursor Admin API Bearer token (required)
+- `TAP_CURSOR_API_KEY`: Your Cursor Admin API key (required)
 
 ### Optional Environment Variables
 
-- `CURSOR_API_URL`: The Cursor Admin API base URL (defaults to "https://api.cursor.com")
-- `CURSOR_START_DATE`: The earliest record date to sync daily usage data (defaults to 30 days ago)
-- `CURSOR_END_DATE`: The latest record date to sync daily usage data (defaults to today)
-- `CURSOR_USER_AGENT`: Custom User-Agent header for requests
+- `TAP_CURSOR_API_URL`: The Cursor Admin API base URL (defaults to "https://api.cursor.com")
+- `TAP_CURSOR_START_DATE`: The earliest record date to sync daily usage data (defaults to 30 days ago)
+- `TAP_CURSOR_END_DATE`: The latest record date to sync daily usage data (defaults to today)
+- `TAP_CURSOR_USER_AGENT`: Custom User-Agent header for requests
 
 ## Usage
 
@@ -87,11 +87,11 @@ Note: When using environment variables, you don't need to specify a `--config` p
 Set the following environment variables for your Cursor Admin API credentials:
 
 ```bash
-export CURSOR_AUTH_TOKEN="your_cursor_admin_api_token_here"
-export CURSOR_API_URL="https://api.cursor.com"
-export CURSOR_START_DATE="2024-01-01T00:00:00Z"
-export CURSOR_END_DATE="2024-01-31T23:59:59Z"
-export CURSOR_USER_AGENT="tap-cursor/1.0.0"
+export TAP_CURSOR_API_KEY="your_cursor_admin_api_key_here"
+export TAP_CURSOR_API_URL="https://api.cursor.com"
+export TAP_CURSOR_START_DATE="2024-01-01T00:00:00Z"
+export TAP_CURSOR_END_DATE="2024-01-31T23:59:59Z"
+export TAP_CURSOR_USER_AGENT="tap-cursor/1.0.0"
 ```
 
 Or create a `.env` file in your working directory:
@@ -101,11 +101,11 @@ Or create a `.env` file in your working directory:
 cp .env.example .env
 
 # Edit the .env file with your actual credentials
-CURSOR_AUTH_TOKEN=your_cursor_admin_api_token_here
-CURSOR_API_URL=https://api.cursor.com
-CURSOR_START_DATE=2024-01-01T00:00:00Z
-CURSOR_END_DATE=2024-01-31T23:59:59Z
-CURSOR_USER_AGENT=tap-cursor/1.0.0
+TAP_CURSOR_API_KEY=your_cursor_admin_api_key_here
+TAP_CURSOR_API_URL=https://api.cursor.com
+TAP_CURSOR_START_DATE=2024-01-01T00:00:00Z
+TAP_CURSOR_END_DATE=2024-01-31T23:59:59Z
+TAP_CURSOR_USER_AGENT=tap-cursor/1.0.0
 ```
 
 ### Data Schema

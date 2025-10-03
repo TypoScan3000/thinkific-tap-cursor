@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from importlib import resources
 
 from singer_sdk import typing as th  # JSON Schema typing helpers
+from typing_extensions import override
 
 from tap_cursor.client import CursorStream
 
@@ -29,33 +30,123 @@ class DailyUsageDataStream(CursorStream):
     schema = th.PropertiesList(
         th.Property(
             "date",
-            th.DateType,
-            description="The date for the usage data",
-        ),
-        th.Property(
-            "total_requests",
             th.IntegerType,
-            description="Total number of requests made on this date",
+            description="Date in epoch milliseconds",
         ),
         th.Property(
-            "total_tokens",
+            "isActive",
+            th.BooleanType,
+            description="User active on this day",
+        ),
+        th.Property(
+            "totalLinesAdded",
             th.IntegerType,
-            description="Total number of tokens consumed on this date",
+            description="Lines of code added",
         ),
         th.Property(
-            "active_users",
+            "totalLinesDeleted",
             th.IntegerType,
-            description="Number of active users on this date",
+            description="Lines of code deleted",
         ),
         th.Property(
-            "requests_per_user",
-            th.NumberType,
-            description="Average requests per user on this date",
+            "acceptedLinesAdded",
+            th.IntegerType,
+            description="Lines added from accepted AI suggestions",
         ),
         th.Property(
-            "tokens_per_user",
-            th.NumberType,
-            description="Average tokens per user on this date",
+            "acceptedLinesDeleted",
+            th.IntegerType,
+            description="Lines deleted from accepted AI suggestions",
+        ),
+        th.Property(
+            "totalApplies",
+            th.IntegerType,
+            description="Apply operations",
+        ),
+        th.Property(
+            "totalAccepts",
+            th.IntegerType,
+            description="Accepted suggestions",
+        ),
+        th.Property(
+            "totalRejects",
+            th.IntegerType,
+            description="Rejected suggestions",
+        ),
+        th.Property(
+            "totalTabsShown",
+            th.IntegerType,
+            description="Tab completions shown",
+        ),
+        th.Property(
+            "totalTabsAccepted",
+            th.IntegerType,
+            description="Tab completions accepted",
+        ),
+        th.Property(
+            "composerRequests",
+            th.IntegerType,
+            description="Composer requests",
+        ),
+        th.Property(
+            "chatRequests",
+            th.IntegerType,
+            description="Chat requests",
+        ),
+        th.Property(
+            "agentRequests",
+            th.IntegerType,
+            description="Agent requests",
+        ),
+        th.Property(
+            "cmdkUsages",
+            th.IntegerType,
+            description="Command palette (Cmd+K) uses",
+        ),
+        th.Property(
+            "subscriptionIncludedReqs",
+            th.IntegerType,
+            description="Subscription requests",
+        ),
+        th.Property(
+            "apiKeyReqs",
+            th.IntegerType,
+            description="API key requests",
+        ),
+        th.Property(
+            "usageBasedReqs",
+            th.IntegerType,
+            description="Pay-per-use requests",
+        ),
+        th.Property(
+            "bugbotUsages",
+            th.IntegerType,
+            description="Bug detection uses",
+        ),
+        th.Property(
+            "mostUsedModel",
+            th.StringType,
+            description="Most frequent AI model",
+        ),
+        th.Property(
+            "applyMostUsedExtension",
+            th.StringType,
+            description="Most used file extension for applies",
+        ),
+        th.Property(
+            "tabMostUsedExtension",
+            th.StringType,
+            description="Most used file extension for tabs",
+        ),
+        th.Property(
+            "clientVersion",
+            th.StringType,
+            description="Cursor version",
+        ),
+        th.Property(
+            "email",
+            th.StringType,
+            description="User email",
         ),
     ).to_dict()
 
@@ -99,3 +190,33 @@ class DailyUsageDataStream(CursorStream):
             "startDate": start_epoch_ms,
             "endDate": end_epoch_ms,
         }
+
+
+class MembersStream(CursorStream):
+    """Define custom stream for Cursor team members."""
+
+    name = "members"
+    path = "/teams/members"
+    primary_keys: t.ClassVar[list[str]] = ["email"]
+    rest_method = "GET"
+    
+    # Override the records_jsonpath to extract data from the response
+    records_jsonpath = "$.teamMembers[*]"
+    
+    schema = th.PropertiesList(
+        th.Property(
+            "name",
+            th.StringType,
+            description="Member's name",
+        ),
+        th.Property(
+            "email",
+            th.StringType,
+            description="Member's email address",
+        ),
+        th.Property(
+            "role",
+            th.StringType,
+            description="Member's role in the team",
+        ),
+    ).to_dict()

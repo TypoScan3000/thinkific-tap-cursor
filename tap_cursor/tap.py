@@ -24,35 +24,35 @@ class TapCursor(Tap):
 
     config_jsonschema = th.PropertiesList(
         th.Property(
-            "auth_token",
+            "api_key",
             th.StringType(nullable=False),
             required=True,
             secret=True,  # Flag config as protected.
-            title="Auth Token",
-            description="The Bearer token to authenticate against the Cursor Admin API (CURSOR_AUTH_TOKEN env var)",
+            title="API Key",
+            description="The API key to authenticate against the Cursor Admin API (TAP_CURSOR_API_KEY env var)",
         ),
         th.Property(
             "start_date",
             th.DateTimeType(nullable=True),
-            description="The earliest record date to sync daily usage data (CURSOR_START_DATE env var)",
+            description="The earliest record date to sync daily usage data (TAP_CURSOR_START_DATE env var)",
         ),
         th.Property(
             "end_date",
             th.DateTimeType(nullable=True),
-            description="The latest record date to sync daily usage data (CURSOR_END_DATE env var, defaults to today)",
+            description="The latest record date to sync daily usage data (TAP_CURSOR_END_DATE env var, defaults to today)",
         ),
         th.Property(
             "api_url",
             th.StringType(nullable=False),
             title="API URL",
             default="https://api.cursor.com",
-            description="The base URL for the Cursor Admin API (CURSOR_API_URL env var)",
+            description="The base URL for the Cursor Admin API (TAP_CURSOR_API_URL env var)",
         ),
         th.Property(
             "user_agent",
             th.StringType(nullable=True),
             description=(
-                "A custom User-Agent header to send with each request (CURSOR_USER_AGENT env var). Default is "
+                "A custom User-Agent header to send with each request (TAP_CURSOR_USER_AGENT env var). Default is "
                 "'<tap_name>/<tap_version>'"
             ),
         ),
@@ -72,11 +72,11 @@ class TapCursor(Tap):
             
         # Load from environment variables
         env_config = {
-            "auth_token": os.getenv("CURSOR_AUTH_TOKEN"),
-            "start_date": os.getenv("CURSOR_START_DATE"),
-            "end_date": os.getenv("CURSOR_END_DATE"),
-            "api_url": os.getenv("CURSOR_API_URL", "https://api.cursor.com"),
-            "user_agent": os.getenv("CURSOR_USER_AGENT"),
+            "api_key": os.getenv("TAP_CURSOR_API_KEY"),
+            "start_date": os.getenv("TAP_CURSOR_START_DATE"),
+            "end_date": os.getenv("TAP_CURSOR_END_DATE"),
+            "api_url": os.getenv("TAP_CURSOR_API_URL", "https://api.cursor.com"),
+            "user_agent": os.getenv("TAP_CURSOR_USER_AGENT"),
         }
         
         # Remove None values from env_config
@@ -96,6 +96,7 @@ class TapCursor(Tap):
         """
         return [
             streams.DailyUsageDataStream(self),
+            streams.MembersStream(self),
         ]
 
 
