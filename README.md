@@ -1,6 +1,6 @@
 # tap-cursor
 
-`tap-cursor` is a Singer tap for Cursor.
+`tap-cursor` is a Singer tap for extracting daily usage data from the Cursor Admin API.
 
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
@@ -53,9 +53,20 @@ environment variable is set either in the terminal context or in the `.env` file
 
 ### Source Authentication and Authorization
 
-<!--
-Developer TODO: If your tap requires special access on the source system, or any special authentication requirements, provide those here.
--->
+This tap requires a Cursor Admin API Bearer token for authentication. You can obtain this token from your Cursor account settings under the Admin API section.
+
+The tap uses Bearer token authentication with the `Authorization: Bearer <token>` header format.
+
+### Required Environment Variables
+
+- `CURSOR_AUTH_TOKEN`: Your Cursor Admin API Bearer token (required)
+
+### Optional Environment Variables
+
+- `CURSOR_API_URL`: The Cursor Admin API base URL (defaults to "https://api.cursor.com")
+- `CURSOR_START_DATE`: The earliest record date to sync daily usage data (defaults to 30 days ago)
+- `CURSOR_END_DATE`: The latest record date to sync daily usage data (defaults to today)
+- `CURSOR_USER_AGENT`: Custom User-Agent header for requests
 
 ## Usage
 
@@ -66,8 +77,47 @@ You can easily run `tap-cursor` by itself or in a pipeline using [Meltano](https
 ```bash
 tap-cursor --version
 tap-cursor --help
-tap-cursor --config CONFIG --discover > ./catalog.json
+tap-cursor --discover > ./catalog.json
 ```
+
+Note: When using environment variables, you don't need to specify a `--config` parameter as the tap will automatically load configuration from environment variables.
+
+### Environment Variable Configuration
+
+Set the following environment variables for your Cursor Admin API credentials:
+
+```bash
+export CURSOR_AUTH_TOKEN="your_cursor_admin_api_token_here"
+export CURSOR_API_URL="https://api.cursor.com"
+export CURSOR_START_DATE="2024-01-01T00:00:00Z"
+export CURSOR_END_DATE="2024-01-31T23:59:59Z"
+export CURSOR_USER_AGENT="tap-cursor/1.0.0"
+```
+
+Or create a `.env` file in your working directory:
+
+```bash
+# Copy the example file and fill in your values
+cp .env.example .env
+
+# Edit the .env file with your actual credentials
+CURSOR_AUTH_TOKEN=your_cursor_admin_api_token_here
+CURSOR_API_URL=https://api.cursor.com
+CURSOR_START_DATE=2024-01-01T00:00:00Z
+CURSOR_END_DATE=2024-01-31T23:59:59Z
+CURSOR_USER_AGENT=tap-cursor/1.0.0
+```
+
+### Data Schema
+
+The tap extracts daily usage data with the following fields:
+
+- `date`: The date for the usage data
+- `total_requests`: Total number of requests made on this date
+- `total_tokens`: Total number of tokens consumed on this date
+- `active_users`: Number of active users on this date
+- `requests_per_user`: Average requests per user on this date
+- `tokens_per_user`: Average tokens per user on this date
 
 ## Developer Resources
 

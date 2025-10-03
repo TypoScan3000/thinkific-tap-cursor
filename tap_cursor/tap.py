@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 
 from singer_sdk import Tap
@@ -21,7 +22,6 @@ class TapCursor(Tap):
 
     name = "tap-cursor"
 
-    # TODO: Update this section with the actual config values you expect:
     config_jsonschema = th.PropertiesList(
         th.Property(
             "auth_token",
@@ -29,36 +29,63 @@ class TapCursor(Tap):
             required=True,
             secret=True,  # Flag config as protected.
             title="Auth Token",
-            description="The token to authenticate against the API service",
-        ),
-        th.Property(
-            "project_ids",
-            th.ArrayType(th.StringType(nullable=False), nullable=False),
-            required=True,
-            title="Project IDs",
-            description="Project IDs to replicate",
+            description="The Bearer token to authenticate against the Cursor Admin API (CURSOR_AUTH_TOKEN env var)",
         ),
         th.Property(
             "start_date",
             th.DateTimeType(nullable=True),
-            description="The earliest record date to sync",
+            description="The earliest record date to sync daily usage data (CURSOR_START_DATE env var)",
+        ),
+        th.Property(
+            "end_date",
+            th.DateTimeType(nullable=True),
+            description="The latest record date to sync daily usage data (CURSOR_END_DATE env var, defaults to today)",
         ),
         th.Property(
             "api_url",
             th.StringType(nullable=False),
             title="API URL",
-            default="https://api.mysample.com",
-            description="The url for the API service",
+            default="https://api.cursor.com",
+            description="The base URL for the Cursor Admin API (CURSOR_API_URL env var)",
         ),
         th.Property(
             "user_agent",
             th.StringType(nullable=True),
             description=(
-                "A custom User-Agent header to send with each request. Default is "
+                "A custom User-Agent header to send with each request (CURSOR_USER_AGENT env var). Default is "
                 "'<tap_name>/<tap_version>'"
             ),
         ),
     ).to_dict()
+
+    def load_config(self, config: dict | None = None) -> dict:
+        """Load configuration from environment variables and provided config.
+        
+        Args:
+            config: Optional configuration dictionary
+            
+        Returns:
+            Configuration dictionary with environment variables loaded
+        """
+        if config is None:
+            config = {}
+            
+        # Load from environment variables
+        env_config = {
+            "auth_token": os.getenv("CURSOR_AUTH_TOKEN"),
+            "start_date": os.getenv("CURSOR_START_DATE"),
+            "end_date": os.getenv("CURSOR_END_DATE"),
+            "api_url": os.getenv("CURSOR_API_URL", "https://api.cursor.com"),
+            "user_agent": os.getenv("CURSOR_USER_AGENT"),
+        }
+        
+        # Remove None values from env_config
+        env_config = {k: v for k, v in env_config.items() if v is not None}
+        
+        # Merge with provided config (provided config takes precedence)
+        config.update(env_config)
+        
+        return super().load_config(config)
 
     @override
     def discover_streams(self) -> list[streams.CursorStream]:
@@ -68,8 +95,7 @@ class TapCursor(Tap):
             A list of discovered streams.
         """
         return [
-            streams.GroupsStream(self),
-            streams.UsersStream(self),
+            streams.DailyUsageDataStream(self),
         ]
 
 

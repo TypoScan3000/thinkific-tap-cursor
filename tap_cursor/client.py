@@ -39,8 +39,7 @@ class CursorStream(RESTStream):
     @property
     def url_base(self) -> str:
         """Return the API URL root, configurable via tap settings."""
-        # TODO: hardcode a value here, or retrieve it from self.config
-        return "https://api.mysample.com"
+        return self.config.get("api_url", "https://api.cursor.com")
 
     @override
     @property
@@ -51,8 +50,8 @@ class CursorStream(RESTStream):
             An authenticator instance.
         """
         return APIKeyAuthenticator(
-            key="x-api-key",
-            value=self.config.get("auth_token", ""),
+            key="Authorization",
+            value=f"Bearer {self.config.get('auth_token', '')}",
             location="header",
         )
 
@@ -64,9 +63,10 @@ class CursorStream(RESTStream):
         Returns:
             A dictionary of HTTP headers.
         """
-        # If not using an authenticator, you may also provide inline auth headers:
-        # headers["Private-Token"] = self.config.get("auth_token")  # noqa: ERA001
-        return {}
+        headers = {
+            "Content-Type": "application/json",
+        }
+        return headers
 
     @override
     def get_new_paginator(self) -> BaseAPIPaginator | None:
