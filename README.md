@@ -4,39 +4,23 @@
 
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
-<!--
-
-Developer TODO: Update the below as needed to correctly describe the install procedure. For instance, if you do not have a PyPI repo, or if you want users to directly install from your git repo, you can modify this step as appropriate.
-
 ## Installation
 
-Install from PyPI:
+This tap is designed to be used within a Meltano project. Install it in your Meltano project:
 
 ```bash
-uv tool install tap-cursor
+# Add to your meltano.yml or install directly
+meltano add extractor tap-cursor
+
+# Or install from GitHub
+meltano add extractor tap-cursor --variant git+https://github.com/ORG_NAME/tap-cursor.git@main
 ```
 
-Install from GitHub:
-
-```bash
-uv tool install git+https://github.com/ORG_NAME/tap-cursor.git@main
-```
-
--->
+**Note**: This tap is not intended to be run standalone. It should be installed and configured within a Meltano project for proper data pipeline orchestration.
 
 ## Configuration
 
 ### Accepted Config Options
-
-<!--
-Developer TODO: Provide a list of config options accepted by the tap.
-
-This section can be created by copy-pasting the CLI output from:
-
-```
-tap-cursor --about --format=markdown
-```
--->
 
 A full list of supported settings and capabilities for this
 tap is available by running:
@@ -70,17 +54,34 @@ The tap uses Basic Authentication with the API key as the username and an empty 
 
 ## Usage
 
-You can easily run `tap-cursor` by itself or in a pipeline using [Meltano](https://meltano.com/).
+This tap is designed to be used within a Meltano project for data pipeline orchestration.
 
-### Executing the Tap Directly
+### Running with Meltano
 
 ```bash
-tap-cursor --version
-tap-cursor --help
-tap-cursor --discover > ./catalog.json
+# Discover available streams
+meltano invoke tap-cursor --discover
+
+# Run the tap (with a target)
+meltano run tap-cursor target-jsonl
+
+# Run with specific configuration
+meltano run tap-cursor target-jsonl --state-id=incremental
 ```
 
-Note: When using environment variables, you don't need to specify a `--config` parameter as the tap will automatically load configuration from environment variables.
+### Configuration in Meltano
+
+Configure the tap in your `meltano.yml`:
+
+```yaml
+extractors:
+  - name: tap-cursor
+    variant: tap-cursor
+    config:
+      api_key: ${TAP_CURSOR_API_KEY}
+      start_date: "2024-01-01T00:00:00Z"
+      end_date: "2024-01-31T23:59:59Z"
+```
 
 ### Incremental Replication
 
@@ -92,21 +93,21 @@ The `daily_usage_data` stream supports incremental replication using the `date` 
 
 **Note**: Syncs are not resumable if interrupted - the tap must run to completion for the state to be properly updated.
 
-To use incremental replication:
+To use incremental replication in Meltano:
 
 ```bash
 # First run - syncs historical data
-tap-cursor --config config.json > output.jsonl
+meltano run tap-cursor target-jsonl
 
 # Subsequent runs - only syncs new data since last run
-tap-cursor --config config.json --state state.json > output.jsonl
+meltano run tap-cursor target-jsonl --state-id=incremental
 ```
 
-The tap automatically manages the state file, which tracks the last replication key value processed.
+Meltano automatically manages the state file, which tracks the last replication key value processed.
 
 ### Environment Variable Configuration
 
-Set the following environment variables for your Cursor Admin API credentials:
+Set the following environment variables in your Meltano project:
 
 ```bash
 export TAP_CURSOR_API_KEY="your_cursor_admin_api_key_here"
@@ -116,13 +117,10 @@ export TAP_CURSOR_END_DATE="2024-01-31T23:59:59Z"
 export TAP_CURSOR_USER_AGENT="tap-cursor/1.0.0"
 ```
 
-Or create a `.env` file in your working directory:
+Or create a `.env` file in your Meltano project directory:
 
 ```bash
-# Copy the example file and fill in your values
-cp .env.example .env
-
-# Edit the .env file with your actual credentials
+# Create .env file in your Meltano project
 TAP_CURSOR_API_KEY=your_cursor_admin_api_key_here
 TAP_CURSOR_API_URL=https://api.cursor.com
 TAP_CURSOR_START_DATE=2024-01-01T00:00:00Z
@@ -173,32 +171,36 @@ uv run tap-cursor --help
 
 ### Testing with [Meltano](https://www.meltano.com)
 
-_**Note:** This tap will work in any Singer environment and does not require Meltano.
-Examples here are for convenience and to streamline end-to-end orchestration scenarios._
+This tap is designed to be used within a Meltano project. To test it:
 
-<!--
-Developer TODO:
-Your project comes with a custom `meltano.yml` project file already created. Open the `meltano.yml` and follow any "TODO" items listed in
-the file.
--->
-
-Next, install Meltano (if you haven't already) and any needed plugins:
-
+1. **Create a new Meltano project** (if you don't have one):
 ```bash
 # Install meltano
 uv tool install meltano
-# Initialize meltano within this directory
-cd tap-cursor
-meltano install
+
+# Initialize a new meltano project
+meltano init my-cursor-project
+cd my-cursor-project
 ```
 
-Now you can test and orchestrate using Meltano:
-
+2. **Add this tap to your Meltano project**:
 ```bash
-# Test invocation:
-meltano invoke tap-cursor --version
+# Add the tap
+meltano add extractor tap-cursor
 
-# OR run a test ELT pipeline:
+# Add a target (e.g., JSONL for testing)
+meltano add loader target-jsonl
+```
+
+3. **Configure and test**:
+```bash
+# Configure the tap
+meltano config tap-cursor set api_key "your_api_key_here"
+
+# Test discovery
+meltano invoke tap-cursor --discover
+
+# Run a test pipeline
 meltano run tap-cursor target-jsonl
 ```
 

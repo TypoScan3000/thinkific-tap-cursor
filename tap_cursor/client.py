@@ -7,7 +7,7 @@ import sys
 import typing as t
 from importlib import resources
 
-from singer_sdk.authenticators import BasicAuthenticator
+from requests.auth import HTTPBasicAuth
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.pagination import BaseAPIPaginator  # noqa: TC002
 from singer_sdk.streams import RESTStream
@@ -43,13 +43,13 @@ class CursorStream(RESTStream):
 
     @override
     @property
-    def authenticator(self) -> BasicAuthenticator:
+    def authenticator(self) -> HTTPBasicAuth:
         """Return a new authenticator object.
 
         Returns:
             An authenticator instance.
         """
-        return BasicAuthenticator(
+        return HTTPBasicAuth(
             username=self.config.get("api_key", ""),
             password="",  # Cursor API uses API key as username with empty password
         )
