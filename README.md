@@ -82,6 +82,28 @@ tap-cursor --discover > ./catalog.json
 
 Note: When using environment variables, you don't need to specify a `--config` parameter as the tap will automatically load configuration from environment variables.
 
+### Incremental Replication
+
+The `daily_usage_data` stream supports incremental replication using the `date` field as the replication key. This means:
+
+- **First run**: Syncs data from the `start_date` (or 30 days ago if not specified) to `end_date` (or today)
+- **Subsequent runs**: Only syncs new data since the last successful run
+- **Efficient**: Avoids re-syncing historical data on each run
+
+**Note**: Syncs are not resumable if interrupted - the tap must run to completion for the state to be properly updated.
+
+To use incremental replication:
+
+```bash
+# First run - syncs historical data
+tap-cursor --config config.json > output.jsonl
+
+# Subsequent runs - only syncs new data since last run
+tap-cursor --config config.json --state state.json > output.jsonl
+```
+
+The tap automatically manages the state file, which tracks the last replication key value processed.
+
 ### Environment Variable Configuration
 
 Set the following environment variables for your Cursor Admin API credentials:

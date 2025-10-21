@@ -34,7 +34,7 @@ class TapCursor(Tap):
         th.Property(
             "start_date",
             th.DateTimeType(nullable=True),
-            description="The earliest record date to sync daily usage data (TAP_CURSOR_START_DATE env var)",
+            description="The earliest record date to sync daily usage data (TAP_CURSOR_START_DATE env var). Used for initial sync only - subsequent runs use incremental replication.",
         ),
         th.Property(
             "end_date",

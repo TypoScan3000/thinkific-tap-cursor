@@ -30,7 +30,7 @@ class DailyUsageDataStream(CursorStream):
     schema = th.PropertiesList(
         th.Property(
             "date",
-            th.IntegerType,
+            th.DateTimeType,
             description="Date in epoch milliseconds",
         ),
         th.Property(
@@ -165,19 +165,27 @@ class DailyUsageDataStream(CursorStream):
         Returns:
             A dictionary with the JSON body for a POST requests.
         """
-        # Get start and end dates from config
-        start_date = self.config.get("start_date")
-        end_date = self.config.get("end_date")
+        # Get start date from incremental replication or config
+        starting_timestamp = self.get_starting_timestamp(context)
         
-        # Convert to epoch milliseconds as required by the API
-        if start_date:
-            if isinstance(start_date, str):
-                start_date = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-            start_epoch_ms = int(start_date.timestamp() * 1000)
+        if starting_timestamp:
+            # Use the last replication key value for incremental sync
+            start_epoch_ms = int(starting_timestamp.timestamp() * 1000)
+            self.logger.info(f"Using incremental start date: {starting_timestamp}")
         else:
-            # Default to 30 days ago if no start date provided
-            start_epoch_ms = int((datetime.now(timezone.utc).timestamp() - 30 * 24 * 60 * 60) * 1000)
-            
+            # First run or no state - use config or default
+            start_date = self.config.get("start_date")
+            if start_date:
+                if isinstance(start_date, str):
+                    start_date = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                start_epoch_ms = int(start_date.timestamp() * 1000)
+            else:
+                # Default to 30 days ago if no start date provided
+                start_epoch_ms = int((datetime.now(timezone.utc).timestamp() - 30 * 24 * 60 * 60) * 1000)
+            self.logger.info(f"Using config/default start date: {start_date or '30 days ago'}")
+        
+        # Get end date from config
+        end_date = self.config.get("end_date")
         if end_date:
             if isinstance(end_date, str):
                 end_date = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
@@ -190,6 +198,28 @@ class DailyUsageDataStream(CursorStream):
             "startDate": start_epoch_ms,
             "endDate": end_epoch_ms,
         }
+
+    @override
+    def post_process(
+        self,
+        row: dict,
+        context: t.Any | None = None,
+    ) -> dict | None:
+        """Convert epoch milliseconds to datetime for replication key.
+
+        Args:
+            row: An individual record from the stream.
+            context: The stream context.
+
+        Returns:
+            The updated record dictionary, or ``None`` to skip the record.
+        """
+        # Convert epoch milliseconds to datetime for the replication key
+        if "date" in row and row["date"] is not None:
+            # Convert epoch milliseconds to datetime
+            row["date"] = datetime.fromtimestamp(row["date"] / 1000, tz=timezone.utc)
+        
+        return row
 
 
 class MembersStream(CursorStream):
