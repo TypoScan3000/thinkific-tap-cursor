@@ -7,7 +7,7 @@ import sys
 import typing as t
 from importlib import resources
 
-from singer_sdk.authenticators import BasicAuthenticator
+from requests.auth import HTTPBasicAuth
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.pagination import BaseAPIPaginator  # noqa: TC002
 from singer_sdk.streams import RESTStream
@@ -38,19 +38,25 @@ class CursorStream(RESTStream):
     @override
     @property
     def url_base(self) -> str:
-        """Return the API URL root, configurable via tap settings."""
-        return self.config.get("api_url", "https://api.cursor.com")
+        """Return the API URL root."""
+        return "https://api.cursor.com"
 
     @override
     @property
-    def authenticator(self) -> BasicAuthenticator:
+    def authenticator(self) -> HTTPBasicAuth:
         """Return a new authenticator object.
 
         Returns:
             An authenticator instance.
         """
-        return BasicAuthenticator(
-            username=self.config.get("api_key", ""),
+        api_key = self.config.get("api_key")
+        if not api_key:
+            raise ValueError(
+                "API key not found in config. Please ensure TAP_CURSOR_API_KEY environment variable is set."
+            )
+        
+        return HTTPBasicAuth(
+            username=api_key,
             password="",  # Cursor API uses API key as username with empty password
         )
 

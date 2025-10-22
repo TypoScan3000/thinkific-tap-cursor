@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import typing as t
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from importlib import resources
 
 from singer_sdk import typing as th  # JSON Schema typing helpers
@@ -170,18 +170,23 @@ class DailyUsageDataStream(CursorStream):
         
         if starting_timestamp:
             # Use the last replication key value for incremental sync
-            start_epoch_ms = int(starting_timestamp.timestamp() * 1000)
-            self.logger.info(f"Using incremental start date: {starting_timestamp}")
+            # Align to midnight UTC for date boundary consistency
+            start_date = starting_timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
+            start_epoch_ms = int(start_date.timestamp() * 1000)
+            self.logger.info(f"Using incremental start date: {start_date}")
         else:
             # First run or no state - use config or default
             start_date = self.config.get("start_date")
             if start_date:
                 if isinstance(start_date, str):
                     start_date = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                # Align to midnight UTC for date boundary consistency
+                start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
                 start_epoch_ms = int(start_date.timestamp() * 1000)
             else:
                 # Default to 30 days ago if no start date provided
-                start_epoch_ms = int((datetime.now(timezone.utc).timestamp() - 30 * 24 * 60 * 60) * 1000)
+                thirty_days_ago = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=30)
+                start_epoch_ms = int(thirty_days_ago.timestamp() * 1000)
             self.logger.info(f"Using config/default start date: {start_date or '30 days ago'}")
         
         # Get end date from config
@@ -189,10 +194,13 @@ class DailyUsageDataStream(CursorStream):
         if end_date:
             if isinstance(end_date, str):
                 end_date = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            # Align to midnight UTC for date boundary consistency
+            end_date = end_date.replace(hour=0, minute=0, second=0, microsecond=0)
             end_epoch_ms = int(end_date.timestamp() * 1000)
         else:
-            # Default to now if no end date provided
-            end_epoch_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+            # Default to yesterday to ensure we only pull complete days of data
+            yesterday = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+            end_epoch_ms = int(yesterday.timestamp() * 1000)
         
         return {
             "startDate": start_epoch_ms,
