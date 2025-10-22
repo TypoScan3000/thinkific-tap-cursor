@@ -24,14 +24,6 @@ class TapCursor(Tap):
 
     config_jsonschema = th.PropertiesList(
         th.Property(
-            "api_key",
-            th.StringType(nullable=False),
-            required=True,
-            secret=True,  # Flag config as protected.
-            title="API Key",
-            description="The API key to authenticate against the Cursor Admin API (TAP_CURSOR_API_KEY env var)",
-        ),
-        th.Property(
             "start_date",
             th.DateTimeType(nullable=True),
             description="The earliest record date to sync daily usage data (TAP_CURSOR_START_DATE env var). Used for initial sync only - subsequent runs use incremental replication.",
@@ -39,7 +31,7 @@ class TapCursor(Tap):
         th.Property(
             "end_date",
             th.DateTimeType(nullable=True),
-            description="The latest record date to sync daily usage data (TAP_CURSOR_END_DATE env var, defaults to today)",
+            description="The latest record date to sync daily usage data (TAP_CURSOR_END_DATE env var, defaults to yesterday)",
         ),
     ).to_dict()
 
@@ -61,6 +53,13 @@ class TapCursor(Tap):
             "start_date": os.getenv("TAP_CURSOR_START_DATE"),
             "end_date": os.getenv("TAP_CURSOR_END_DATE"),
         }
+        
+        # Check if API key is provided via environment variable
+        if not env_config["api_key"]:
+            raise ValueError(
+                "TAP_CURSOR_API_KEY environment variable is required but not set. "
+                "Please set the TAP_CURSOR_API_KEY environment variable with your Cursor API key."
+            )
         
         # Remove None values from env_config
         env_config = {k: v for k, v in env_config.items() if v is not None}

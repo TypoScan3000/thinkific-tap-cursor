@@ -76,12 +76,13 @@ extractors:
   - name: tap-cursor
     variant: tap-cursor
     config:
-      api_key: ${TAP_CURSOR_API_KEY}
       start_date: "2024-01-01T00:00:00Z"
       end_date: "2024-01-31T23:59:59Z"
 ```
 
 **Note**: The API URL is hard-coded to `https://api.cursor.com` and cannot be configured.
+
+Additionally, the start and end date can also be set via envrionment variables.  Env vars take precendence over the config in meltano.yml.
 
 ### Incremental Replication
 

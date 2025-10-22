@@ -49,8 +49,14 @@ class CursorStream(RESTStream):
         Returns:
             An authenticator instance.
         """
+        api_key = self.config.get("api_key")
+        if not api_key:
+            raise ValueError(
+                "API key not found in config. Please ensure TAP_CURSOR_API_KEY environment variable is set."
+            )
+        
         return HTTPBasicAuth(
-            username=self.config.get("api_key", ""),
+            username=api_key,
             password="",  # Cursor API uses API key as username with empty password
         )
 
