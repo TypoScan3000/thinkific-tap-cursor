@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import sys
 
 from singer_sdk import Tap
@@ -24,6 +23,13 @@ class TapCursor(Tap):
 
     config_jsonschema = th.PropertiesList(
         th.Property(
+            "api_key",
+            th.StringType,
+            required=True,
+            secret=True,
+            description="The Cursor Admin API key for authentication (TAP_CURSOR_API_KEY env var)",
+        ),
+        th.Property(
             "start_date",
             th.DateTimeType(nullable=True),
             description="The earliest record date to sync daily usage data (TAP_CURSOR_START_DATE env var). Used for initial sync only - subsequent runs use incremental replication.",
@@ -35,39 +41,6 @@ class TapCursor(Tap):
         ),
     ).to_dict()
 
-    def load_config(self, config: dict | None = None) -> dict:
-        """Load configuration from environment variables and provided config.
-        
-        Args:
-            config: Optional configuration dictionary
-            
-        Returns:
-            Configuration dictionary with environment variables loaded
-        """
-        if config is None:
-            config = {}
-            
-        # Load from environment variables
-        env_config = {
-            "api_key": os.getenv("TAP_CURSOR_API_KEY"),
-            "start_date": os.getenv("TAP_CURSOR_START_DATE"),
-            "end_date": os.getenv("TAP_CURSOR_END_DATE"),
-        }
-        
-        # Check if API key is provided via environment variable
-        if not env_config["api_key"]:
-            raise ValueError(
-                "TAP_CURSOR_API_KEY environment variable is required but not set. "
-                "Please set the TAP_CURSOR_API_KEY environment variable with your Cursor API key."
-            )
-        
-        # Remove None values from env_config
-        env_config = {k: v for k, v in env_config.items() if v is not None}
-        
-        # Merge with provided config (environment variables take precedence)
-        config.update(env_config)
-        
-        return super().load_config(config)
 
     @override
     def discover_streams(self) -> list[streams.CursorStream]:

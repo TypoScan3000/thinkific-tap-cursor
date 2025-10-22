@@ -31,9 +31,7 @@ tap-cursor --about
 
 ### Configure using environment variables
 
-This Singer tap will automatically import any environment variables within the working directory's
-`.env` if the `--config=ENV` is provided, such that config values will be considered if a matching
-environment variable is set either in the terminal context or in the `.env` file.
+This Singer tap follows the standard Singer SDK convention for environment variables. Settings can be configured through environment variables using the format `TAP_CURSOR_<SETTING_NAME>`.
 
 ### Source Authentication and Authorization
 
@@ -41,14 +39,14 @@ This tap requires a Cursor Admin API key for authentication. You can obtain this
 
 The tap uses Basic Authentication with the API key as the username and an empty password.
 
-### Required Environment Variables
+### Required Settings
 
-- `TAP_CURSOR_API_KEY`: Your Cursor Admin API key (required)
+- `api_key`: Your Cursor Admin API key (can be set via `TAP_CURSOR_API_KEY` env var)
 
-### Optional Environment Variables
+### Optional Settings
 
-- `TAP_CURSOR_START_DATE`: The earliest record date to sync daily usage data (defaults to 30 days ago)
-- `TAP_CURSOR_END_DATE`: The latest record date to sync daily usage data (defaults to today)
+- `start_date`: The earliest record date to sync daily usage data (can be set via `TAP_CURSOR_START_DATE` env var, defaults to 30 days ago)
+- `end_date`: The latest record date to sync daily usage data (can be set via `TAP_CURSOR_END_DATE` env var, defaults to today)
 
 ## Usage
 
@@ -75,14 +73,24 @@ Configure the tap in your `meltano.yml`:
 extractors:
   - name: tap-cursor
     variant: tap-cursor
+    env:
+      # Pass environment variables from .env file to the tap process
+      TAP_CURSOR_API_KEY: $TAP_CURSOR_API_KEY
+      TAP_CURSOR_START_DATE: $TAP_CURSOR_START_DATE
+      TAP_CURSOR_END_DATE: $TAP_CURSOR_END_DATE
     config:
       start_date: "2024-01-01T00:00:00Z"
       end_date: "2024-01-31T23:59:59Z"
 ```
 
-**Note**: The API URL is hard-coded to `https://api.cursor.com` and cannot be configured.
+The `env:` section ensures environment variables from your `.env` file are available to the tap. Create a `.env` file in your Meltano project:
+```bash
+TAP_CURSOR_API_KEY=your_cursor_admin_api_key_here
+TAP_CURSOR_START_DATE=2024-01-01T00:00:00Z
+TAP_CURSOR_END_DATE=2024-01-31T23:59:59Z
+```
 
-Additionally, the start and end date can also be set via envrionment variables.  Env vars take precendence over the config in meltano.yml.
+**Note**: The API URL is hard-coded to `https://api.cursor.com` and cannot be configured.
 
 ### Incremental Replication
 
@@ -191,8 +199,11 @@ meltano add loader target-jsonl
 
 3. **Configure and test**:
 ```bash
-# Configure the tap
-meltano config tap-cursor set api_key "your_api_key_here"
+# Set the API key via environment variable
+export TAP_CURSOR_API_KEY="your_api_key_here"
+
+# Or add to your .env file
+echo "TAP_CURSOR_API_KEY=your_api_key_here" >> .env
 
 # Test discovery
 meltano invoke tap-cursor --discover

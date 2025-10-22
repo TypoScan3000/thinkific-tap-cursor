@@ -1455,7 +1455,7 @@ wheels = [
 ]
 
 [[package]]
-name = "thinkific-tap-cursor"
+name = "tap-cursor"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
