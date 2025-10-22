@@ -38,8 +38,8 @@ class CursorStream(RESTStream):
     @override
     @property
     def url_base(self) -> str:
-        """Return the API URL root, configurable via tap settings."""
-        return self.config.get("api_url", "https://api.cursor.com")
+        """Return the API URL root."""
+        return "https://api.cursor.com"
 
     @override
     @property

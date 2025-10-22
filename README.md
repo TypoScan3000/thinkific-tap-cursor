@@ -47,10 +47,8 @@ The tap uses Basic Authentication with the API key as the username and an empty 
 
 ### Optional Environment Variables
 
-- `TAP_CURSOR_API_URL`: The Cursor Admin API base URL (defaults to "https://api.cursor.com")
 - `TAP_CURSOR_START_DATE`: The earliest record date to sync daily usage data (defaults to 30 days ago)
 - `TAP_CURSOR_END_DATE`: The latest record date to sync daily usage data (defaults to today)
-- `TAP_CURSOR_USER_AGENT`: Custom User-Agent header for requests
 
 ## Usage
 
@@ -83,6 +81,8 @@ extractors:
       end_date: "2024-01-31T23:59:59Z"
 ```
 
+**Note**: The API URL is hard-coded to `https://api.cursor.com` and cannot be configured.
+
 ### Incremental Replication
 
 The `daily_usage_data` stream supports incremental replication using the `date` field as the replication key. This means:
@@ -111,10 +111,8 @@ Set the following environment variables in your Meltano project:
 
 ```bash
 export TAP_CURSOR_API_KEY="your_cursor_admin_api_key_here"
-export TAP_CURSOR_API_URL="https://api.cursor.com"
 export TAP_CURSOR_START_DATE="2024-01-01T00:00:00Z"
 export TAP_CURSOR_END_DATE="2024-01-31T23:59:59Z"
-export TAP_CURSOR_USER_AGENT="tap-cursor/1.0.0"
 ```
 
 Or create a `.env` file in your Meltano project directory:
@@ -122,10 +120,8 @@ Or create a `.env` file in your Meltano project directory:
 ```bash
 # Create .env file in your Meltano project
 TAP_CURSOR_API_KEY=your_cursor_admin_api_key_here
-TAP_CURSOR_API_URL=https://api.cursor.com
 TAP_CURSOR_START_DATE=2024-01-01T00:00:00Z
 TAP_CURSOR_END_DATE=2024-01-31T23:59:59Z
-TAP_CURSOR_USER_AGENT=tap-cursor/1.0.0
 ```
 
 ### Data Schema
