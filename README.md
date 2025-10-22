@@ -1,19 +1,16 @@
 # tap-cursor
 
-`tap-cursor` is a Singer tap for extracting daily usage data from the Cursor Admin API.
+`tap-cursor` is a Singer tap for extracting daily usage data from the Cursor Admin API, built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
-Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
+This is a custom tap developed and owned by Thinkific's data team and is not currently published to Meltano Hub.
 
 ## Installation
 
-This tap is designed to be used within a Meltano project. Install it in your Meltano project:
+This tap is designed to be used within a Meltano project. Install it in your Meltano project by manually adding a block to `meltano.yml` and running:
 
 ```bash
 # Add to your meltano.yml or install directly
-meltano add extractor tap-cursor
-
-# Or install from GitHub
-meltano add extractor tap-cursor --variant git+https://github.com/ORG_NAME/tap-cursor.git@main
+meltano install tap-cursor
 ```
 
 **Note**: This tap is not intended to be run standalone. It should be installed and configured within a Meltano project for proper data pipeline orchestration.
@@ -26,16 +23,16 @@ A full list of supported settings and capabilities for this
 tap is available by running:
 
 ```bash
-tap-cursor --about
+meltano invoke tap-cursor --about
 ```
 
 ### Configure using environment variables
 
-This Singer tap follows the standard Singer SDK convention for environment variables. Settings can be configured through environment variables using the format `TAP_CURSOR_<SETTING_NAME>`.
+Settings can be configured through environment variables using the format `TAP_CURSOR_<SETTING_NAME>`, or in a `config` block in `meltano.yml`.  Environment variables take precedence.
 
 ### Source Authentication and Authorization
 
-This tap requires a Cursor Admin API key for authentication. You can obtain this API key from your Cursor account settings under the Admin API section.
+This tap requires a Cursor Admin API key for authentication. You can obtain this API key from a company Cursor admin.
 
 The tap uses Basic Authentication with the API key as the username and an empty password.
 
@@ -60,9 +57,6 @@ meltano invoke tap-cursor --discover
 
 # Run the tap (with a target)
 meltano run tap-cursor target-jsonl
-
-# Run with specific configuration
-meltano run tap-cursor target-jsonl --state-id=incremental
 ```
 
 ### Configuration in Meltano
@@ -71,146 +65,56 @@ Configure the tap in your `meltano.yml`:
 
 ```yaml
 extractors:
+  [... other extractors ...]
   - name: tap-cursor
-    variant: tap-cursor
-    env:
-      # Pass environment variables from .env file to the tap process
-      TAP_CURSOR_API_KEY: $TAP_CURSOR_API_KEY
-      TAP_CURSOR_START_DATE: $TAP_CURSOR_START_DATE
-      TAP_CURSOR_END_DATE: $TAP_CURSOR_END_DATE
-    config:
-      start_date: "2024-01-01T00:00:00Z"
-      end_date: "2024-01-31T23:59:59Z"
+    namespace: tap_cursor
+    python: '3.11'
+    pip_url: git+https://github.com/thinkific/tap-gong.git@[SHA1 to pin to a commit]
+    capabilities:
+    - state
+    - catalog
+    - discover
+    - about
+    settings: # normally handled in Meltano hub, but this is a custom tap so Meltano needs this to introspect the env vars
+    - name: api_key
+      kind: password
+      description: The Cursor Admin API key for authentication
+    - name: start_date
+      kind: date_iso8601
+      description: The earliest record date to sync daily usage data
+    - name: end_date
+      kind: date_iso8601
+      description: The latest record date to sync daily usage data
+    # config: # normally we'd have configs but we rely on defaults or env vars for now
+      # start_date: '2025-10-01T00:00:00Z' # Don't provide dates; the tap defaults to the max (30 days ago up to current date)
+      # end_date: '2050-12-31T00:00:00Z'   # incremental sync replaces the latest (partial) date's data with full date when the next sync is run
+    select:
+    - daily_usage_data.*
+    metadata:
+      daily_usage_data:
+        replication-method: INCREMENTAL
+        replication-key: date
 ```
 
-The `env:` section ensures environment variables from your `.env` file are available to the tap. Create a `.env` file in your Meltano project:
+The `.env` file in your Meltano project should contain:
 ```bash
 TAP_CURSOR_API_KEY=your_cursor_admin_api_key_here
-TAP_CURSOR_START_DATE=2024-01-01T00:00:00Z
-TAP_CURSOR_END_DATE=2024-01-31T23:59:59Z
+TAP_CURSOR_START_DATE=2024-01-01T00:00:00Z # optional
+TAP_CURSOR_END_DATE=2024-01-31T23:59:59Z # optional
 ```
 
-**Note**: The API URL is hard-coded to `https://api.cursor.com` and cannot be configured.
+**Note**: The API URL is hard-coded to `https://api.cursor.com` and is not separately configured.
 
 ### Incremental Replication
 
-The `daily_usage_data` stream supports incremental replication using the `date` field as the replication key. This means:
+The `daily_usage_data` stream supports incremental replication using the `date` field as the replication key, stored in the configured state. This means:
 
 - **First run**: Syncs data from the `start_date` (or 30 days ago if not specified) to `end_date` (or today)
 - **Subsequent runs**: Only syncs new data since the last successful run
-- **Efficient**: Avoids re-syncing historical data on each run
 
 **Note**: Syncs are not resumable if interrupted - the tap must run to completion for the state to be properly updated.
 
-To use incremental replication in Meltano:
-
-```bash
-# First run - syncs historical data
-meltano run tap-cursor target-jsonl
-
-# Subsequent runs - only syncs new data since last run
-meltano run tap-cursor target-jsonl --state-id=incremental
-```
-
-Meltano automatically manages the state file, which tracks the last replication key value processed.
-
-### Environment Variable Configuration
-
-Set the following environment variables in your Meltano project:
-
-```bash
-export TAP_CURSOR_API_KEY="your_cursor_admin_api_key_here"
-export TAP_CURSOR_START_DATE="2024-01-01T00:00:00Z"
-export TAP_CURSOR_END_DATE="2024-01-31T23:59:59Z"
-```
-
-Or create a `.env` file in your Meltano project directory:
-
-```bash
-# Create .env file in your Meltano project
-TAP_CURSOR_API_KEY=your_cursor_admin_api_key_here
-TAP_CURSOR_START_DATE=2024-01-01T00:00:00Z
-TAP_CURSOR_END_DATE=2024-01-31T23:59:59Z
-```
-
-### Data Schema
-
-The tap extracts daily usage data with the following fields:
-
-- `date`: The date for the usage data
-- `total_requests`: Total number of requests made on this date
-- `total_tokens`: Total number of tokens consumed on this date
-- `active_users`: Number of active users on this date
-- `requests_per_user`: Average requests per user on this date
-- `tokens_per_user`: Average tokens per user on this date
-
-## Developer Resources
-
-Follow these instructions to contribute to this project.
-
-### Initialize your Development Environment
-
-Prerequisites:
-
-- Python 3.10+
-- [uv](https://docs.astral.sh/uv/)
-
-```bash
-uv sync
-```
-
-### Create and Run Tests
-
-Create tests within the `tests` subfolder and
-then run:
-
-```bash
-uv run pytest
-```
-
-You can also test the `tap-cursor` CLI interface directly using `uv run`:
-
-```bash
-uv run tap-cursor --help
-```
-
-### Testing with [Meltano](https://www.meltano.com)
-
-This tap is designed to be used within a Meltano project. To test it:
-
-1. **Create a new Meltano project** (if you don't have one):
-```bash
-# Install meltano
-uv tool install meltano
-
-# Initialize a new meltano project
-meltano init my-cursor-project
-cd my-cursor-project
-```
-
-2. **Add this tap to your Meltano project**:
-```bash
-# Add the tap
-meltano add extractor tap-cursor
-
-# Add a target (e.g., JSONL for testing)
-meltano add loader target-jsonl
-```
-
-3. **Configure and test**:
-```bash
-# Set the API key via environment variable
-export TAP_CURSOR_API_KEY="your_api_key_here"
-
-# Or add to your .env file
-echo "TAP_CURSOR_API_KEY=your_api_key_here" >> .env
-
-# Test discovery
-meltano invoke tap-cursor --discover
-
-# Run a test pipeline
-meltano run tap-cursor target-jsonl
-```
+Meltano automatically manages the state file (stored in Google Cloud Storage by default), which tracks the last replication key value processed.
 
 ### SDK Dev Guide
 
