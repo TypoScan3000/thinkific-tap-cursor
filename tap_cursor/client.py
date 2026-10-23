@@ -22,7 +22,7 @@ if t.TYPE_CHECKING:
     from singer_sdk.helpers.types import Context
 
 
-# TODO: Delete this is if not using json files for schema definition
+# TODO: Delete this if not using json files for schema definition
 SCHEMAS_DIR = resources.files(__package__) / "schemas"
 
 
@@ -128,7 +128,7 @@ class CursorStream(RESTStream):
             next_page_token: The next page index or value.
 
         Returns:
-            A dictionary with the JSON body for a POST requests.
+            A dictionary with the JSON body for a POST request.
         """
         # TODO: Delete this method if no payload is required. (Most REST APIs.)
         return None
